@@ -1,6 +1,6 @@
 import "./App.css";
 import About from "./assets/About_us.jsx";
-import Home from "./assets/home.jsx";
+import Home from "./assets/Home.jsx";
 import Services from './assets/Services.jsx'
 import ContactUs from "./assets/Contact_us.jsx";
 import SignUpPage from "./assets/signup_working.jsx";
