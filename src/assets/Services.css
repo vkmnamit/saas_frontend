@@ -1,0 +1,220 @@
+:root {
+    --bg: #ffffff;
+    --card: #f8fafc;
+    --text: #0f172a;
+    --muted: #6b7280;
+    --accent: #000000;
+    --accent-2: #000000;
+    --radius: 8px;
+    --shadow: 0 4px 16px rgba(2, 6, 23, 0.08);
+    font-family: Inter, "Segoe UI", Roboto, system-ui, -apple-system, "Helvetica Neue", Arial;
+}
+
+.services-section {
+    background: var(--bg);
+    padding: 60px 40px;
+    min-height: 100vh;
+    width: 100%;
+}
+
+.services-inner {
+    width: 100%;
+    max-width: none;
+    background: transparent;
+    border-radius: 0;
+    padding: 0;
+    box-shadow: none;
+    border: none;
+    margin: 0;
+}
+
+/* Title & lead */
+.services-title {
+    margin: 0 0 30px 0;
+    font-size: 3rem;
+    line-height: 1.2;
+    color: var(--text);
+    font-weight: 700;
+    text-align: center;
+}
+
+.services-lead {
+    margin: 0 auto 60px auto;
+    color: var(--muted);
+    font-size: 1.2rem;
+    line-height: 1.6;
+    text-align: center;
+    max-width: 800px;
+}
+
+/* Services Grid */
+.services-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+    gap: 30px;
+    margin: 0 auto 80px auto;
+    max-width: 1400px;
+}
+
+.service-card {
+    background: var(--card);
+    padding: 40px 30px;
+    border-radius: var(--radius);
+    border: 1px solid rgba(2, 6, 23, 0.06);
+    box-shadow: var(--shadow);
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+    text-align: center;
+}
+
+.service-card:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.12);
+}
+
+.service-icon {
+    font-size: 3rem;
+    margin-bottom: 20px;
+    display: block;
+}
+
+.service-card h3 {
+    color: var(--text);
+    font-size: 1.4rem;
+    font-weight: 600;
+    margin-bottom: 15px;
+}
+
+.service-card p {
+    color: var(--muted);
+    font-size: 1rem;
+    line-height: 1.6;
+    margin-bottom: 20px;
+}
+
+.service-card ul {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    text-align: left;
+}
+
+.service-card li {
+    color: var(--text);
+    font-size: 0.9rem;
+    padding: 6px 0;
+    position: relative;
+    padding-left: 20px;
+}
+
+.service-card li:before {
+    content: "✓";
+    position: absolute;
+    left: 0;
+    color: var(--accent);
+    font-weight: bold;
+}
+
+/* CTA Section */
+.services-cta {
+    text-align: center;
+    max-width: 600px;
+    margin: 0 auto;
+    padding: 60px 30px;
+    background: var(--card);
+    border-radius: var(--radius);
+    box-shadow: var(--shadow);
+}
+
+.services-cta h3 {
+    color: var(--text);
+    font-size: 2rem;
+    font-weight: 700;
+    margin-bottom: 15px;
+}
+
+.services-cta p {
+    color: var(--muted);
+    font-size: 1.1rem;
+    line-height: 1.6;
+    margin-bottom: 30px;
+}
+
+/* Button */
+.btn-primary {
+    display: inline-block;
+    background: linear-gradient(135deg, var(--accent) 0%, #059fa1 100%);
+    color: white;
+    text-decoration: none;
+    padding: 16px 32px;
+    border-radius: var(--radius);
+    font-weight: 600;
+    font-size: 1rem;
+    box-shadow: 0 4px 12px rgba(14, 165, 164, 0.2);
+    transition: transform .2s ease, box-shadow .2s ease, background .2s ease;
+}
+
+.btn-primary:hover {
+    transform: translateY(-3px);
+    background: linear-gradient(135deg, var(--accent-2) 0%, #0369a1 100%);
+    box-shadow: 0 8px 20px rgba(3, 105, 161, 0.3);
+}
+
+/* Responsive */
+@media (max-width: 720px) {
+    .services-section {
+        padding: 40px 20px;
+    }
+
+    .services-title {
+        font-size: 2.2rem;
+        margin-bottom: 20px;
+    }
+
+    .services-lead {
+        font-size: 1.1rem;
+        margin-bottom: 40px;
+    }
+
+    .services-grid {
+        grid-template-columns: 1fr;
+        gap: 20px;
+        margin-bottom: 50px;
+    }
+
+    .service-card {
+        padding: 25px 20px;
+    }
+
+    .service-icon {
+        font-size: 2.5rem;
+        margin-bottom: 15px;
+    }
+
+    .service-card h3 {
+        font-size: 1.2rem;
+        margin-bottom: 10px;
+    }
+
+    .service-card p {
+        font-size: 0.95rem;
+        margin-bottom: 15px;
+    }
+
+    .services-cta {
+        padding: 40px 20px;
+        margin: 0 20px;
+    }
+
+    .services-cta h3 {
+        font-size: 1.6rem;
+    }
+
+    .services-cta p {
+        font-size: 1rem;
+    }
+
+    .btn-primary {
+        width: 100%;
+        padding: 16px 20px;
+    }
+}

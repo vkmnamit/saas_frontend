@@ -1,0 +1,289 @@
+/* Settings Page - Premium Black & White Responsive Design */
+.settings-container {
+    max-width: 900px;
+    margin: 40px auto;
+    padding: 40px;
+    background: #ffffff;
+    border-radius: 12px;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+    border: 1px solid #e0e0e0;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu', 'Cantarell', sans-serif;
+}
+
+.settings-container h1 {
+    font-size: 2.5rem;
+    font-weight: 700;
+    color: #1a1a1a;
+    text-align: center;
+    margin-bottom: 15px;
+    letter-spacing: -0.5px;
+}
+
+.settings-subtitle {
+    text-align: center;
+    color: #666;
+    font-size: 1rem;
+    margin-bottom: 40px;
+}
+
+/* Theme Toggle Button */
+.settings-container>button {
+    display: block;
+    margin: 0 auto 30px;
+    padding: 12px 28px;
+    font-size: 0.9rem;
+    font-weight: 700;
+    color: #ffffff;
+    background: #1a1a1a;
+    border: 2px solid #1a1a1a;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.settings-container>button:hover {
+    background: #ffffff;
+    color: #1a1a1a;
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.15);
+}
+
+/* Form Styles */
+.settings-container form {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 25px;
+}
+
+.settings-container label {
+    display: flex;
+    flex-direction: column;
+    font-size: 0.95rem;
+    font-weight: 600;
+    color: #1a1a1a;
+    gap: 8px;
+}
+
+.settings-container label span {
+    font-weight: 600;
+    color: #333;
+    margin-bottom: 5px;
+}
+
+.settings-container input,
+.settings-container select {
+    padding: 12px 16px;
+    font-size: 1rem;
+    border: 2px solid #e0e0e0;
+    border-radius: 8px;
+    background: #ffffff;
+    color: #1a1a1a;
+    transition: all 0.3s ease;
+    font-weight: 500;
+}
+
+.settings-container input:focus,
+.settings-container select:focus {
+    outline: none;
+    border-color: #1a1a1a;
+    box-shadow: 0 0 0 3px rgba(0, 0, 0, 0.1);
+}
+
+.settings-container input:hover,
+.settings-container select:hover {
+    border-color: #999;
+}
+
+/* Save Button - Full Width */
+.settings-container form button[type="submit"] {
+    grid-column: 1 / -1;
+    padding: 16px 24px;
+    font-size: 1rem;
+    font-weight: 700;
+    color: #ffffff;
+    background: #1a1a1a;
+    border: 2px solid #1a1a1a;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    margin-top: 10px;
+}
+
+.settings-container form button[type="submit"]:hover {
+    background: #ffffff;
+    color: #1a1a1a;
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.15);
+}
+
+/* Dark Theme Styles */
+body.dark-theme {
+    background-color: #0a0a0a;
+    color: #ffffff;
+}
+
+body.dark-theme .settings-container {
+    background: #1a1a1a;
+    border-color: #333;
+}
+
+body.dark-theme .settings-container h1 {
+    color: #ffffff;
+}
+
+body.dark-theme .settings-subtitle {
+    color: #999;
+}
+
+body.dark-theme .settings-container label {
+    color: #ffffff;
+}
+
+body.dark-theme .settings-container label span {
+    color: #cccccc;
+}
+
+body.dark-theme .settings-container input,
+body.dark-theme .settings-container select {
+    background: #2a2a2a;
+    color: #ffffff;
+    border-color: #444;
+}
+
+body.dark-theme .settings-container input:focus,
+body.dark-theme .settings-container select:focus {
+    border-color: #ffffff;
+    box-shadow: 0 0 0 3px rgba(255, 255, 255, 0.1);
+}
+
+body.dark-theme .settings-container>button {
+    background: #ffffff;
+    color: #1a1a1a;
+    border-color: #ffffff;
+}
+
+body.dark-theme .settings-container>button:hover {
+    background: #1a1a1a;
+    color: #ffffff;
+    border-color: #ffffff;
+}
+
+body.dark-theme .settings-container form button[type="submit"] {
+    background: #ffffff;
+    color: #1a1a1a;
+    border-color: #ffffff;
+}
+
+body.dark-theme .settings-container form button[type="submit"]:hover {
+    background: #1a1a1a;
+    color: #ffffff;
+    border-color: #ffffff;
+}
+
+/* Responsive Design */
+@media (max-width: 1024px) {
+    .settings-container {
+        max-width: 700px;
+        margin: 30px auto;
+        padding: 30px;
+    }
+
+    .settings-container h1 {
+        font-size: 2rem;
+    }
+}
+
+@media (max-width: 768px) {
+    .settings-container {
+        margin: 20px;
+        padding: 25px;
+    }
+
+    .settings-container h1 {
+        font-size: 1.8rem;
+        margin-bottom: 10px;
+    }
+
+    .settings-subtitle {
+        font-size: 0.9rem;
+        margin-bottom: 30px;
+    }
+
+    /* Stack form fields vertically on mobile */
+    .settings-container form {
+        grid-template-columns: 1fr;
+        gap: 20px;
+    }
+
+    .settings-container label {
+        font-size: 0.9rem;
+    }
+
+    .settings-container input,
+    .settings-container select {
+        padding: 12px 14px;
+        font-size: 0.95rem;
+    }
+
+    .settings-container>button {
+        padding: 12px 24px;
+        font-size: 0.85rem;
+        margin-bottom: 25px;
+    }
+
+    .settings-container form button[type="submit"] {
+        padding: 14px 20px;
+        font-size: 0.9rem;
+    }
+}
+
+@media (max-width: 480px) {
+    .settings-container {
+        margin: 15px;
+        padding: 20px;
+        border-radius: 8px;
+    }
+
+    .settings-container h1 {
+        font-size: 1.5rem;
+    }
+
+    .settings-subtitle {
+        font-size: 0.85rem;
+        margin-bottom: 25px;
+    }
+
+    .settings-container form {
+        gap: 18px;
+    }
+
+    .settings-container input,
+    .settings-container select {
+        padding: 10px 12px;
+        font-size: 0.9rem;
+    }
+
+    .settings-container>button {
+        width: 100%;
+        padding: 10px 20px;
+        font-size: 0.8rem;
+    }
+
+    .settings-container form button[type="submit"] {
+        padding: 12px 18px;
+        font-size: 0.85rem;
+        letter-spacing: 0.5px;
+    }
+}
+
+/* Animation for smooth transitions */
+.settings-container,
+.settings-container input,
+.settings-container select,
+.settings-container button {
+    transition: all 0.3s ease;
+}
