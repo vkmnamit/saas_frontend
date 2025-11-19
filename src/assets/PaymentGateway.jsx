@@ -23,7 +23,33 @@ const PaymentGateway = () => {
         loadRazorpayScript();
     }, []);
 
+    // Detect internet connection status
+    useEffect(() => {
+        const handleOffline = () => {
+            setPaymentStatus('');
+            alert('⚠️ No internet connection detected!\n\nPlease check your connection and try again.');
+            console.warn('Internet connection lost');
+        };
+        
+        const handleOnline = () => {
+            console.log('✅ Internet connection restored');
+        };
+        
+        window.addEventListener('offline', handleOffline);
+        window.addEventListener('online', handleOnline);
+        
+        return () => {
+            window.removeEventListener('offline', handleOffline);
+            window.removeEventListener('online', handleOnline);
+        };
+    }, []);
+
     const handlePayment = async () => {
+        // Check internet connection before proceeding
+        if (!navigator.onLine) {
+            alert('⚠️ No internet connection!\n\nPlease connect to the internet and try again.');
+            return;
+        }
         if (!amount || amount < 1) {
             alert('Please enter a valid amount (minimum ₹1)');
             return;
