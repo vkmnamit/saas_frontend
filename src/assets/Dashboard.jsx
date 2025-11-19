@@ -13,7 +13,7 @@ function Dashboard() {
     const [loadingProducts, setLoadingProducts] = useState(true);
     const navigate = useNavigate();
     useEffect(() => {
-        // Fetch user data from backend API with credentials so httpOnly cookie is sent
+       
         (async () => {
             try {
                 const res = await fetch('http://localhost:5002/api/users/profile', {

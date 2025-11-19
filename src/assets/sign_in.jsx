@@ -9,7 +9,7 @@ export default function SignInPage() {
 
     const handleSignIn = (e) => {
         e.preventDefault();
-        // Send the sign-in data to the backend
+      
         (async () => {
             try {
                 const res = await fetch('/api/users/signin', {
