@@ -147,7 +147,13 @@ export default function Cart() {
                             <span className="summary-label">Total</span>
                             <span className="summary-value">₹{totalValue}</span>
                         </div>
-                        <button className="proceed-button" onClick={() => navigate('/payment')}>
+                        <button className="proceed-button" onClick={() => navigate('/payment', {
+                            state: {
+                                items: items,
+                                totalValue: totalValue,
+                                userId: userId
+                            }
+                        })}>
                             Proceed to Payment
                         </button>
                     </div>

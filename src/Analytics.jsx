@@ -4,7 +4,8 @@ import './Analytics.css';
 const Analytics = () => {
     const [data, setData] = useState(null);
     const [error, setError] = useState("");
-    const [selectedPeriod, setSelectedPeriod] = useState('weekly');
+    const [activeTab, setActiveTab] = useState('weekly'); // 'weekly', 'monthly', 'yearly'
+    const [graphMetric, setGraphMetric] = useState('totalOrders'); // 'totalOrders', 'totalOrderValue'
     const [chartType, setChartType] = useState('weeklyTimeSeries');
     const [isRealTime, setIsRealTime] = useState(true);
     const [invoiceData, setInvoiceData] = useState(null);
@@ -27,7 +28,10 @@ const Analytics = () => {
 
     const fetchAnalytics = async () => {
         try {
-            const res = await fetch('http://localhost:5002/api/analytics', {
+            const url = userId
+                ? `http://localhost:5002/api/analytics?userId=${userId}`
+                : 'http://localhost:5002/api/analytics';
+            const res = await fetch(url, {
                 method: 'GET',
                 headers: { 'Content-Type': 'application/json' },
                 credentials: 'include',
@@ -76,7 +80,7 @@ const Analytics = () => {
         // Set up real-time updates every 30 seconds
         let interval;
         if (isRealTime) {
-            interval = setInterval(fetchAnalytics, 30000);
+            interval = setInterval(fetchAnalytics, 15000);
         }
 
 
@@ -99,7 +103,9 @@ const Analytics = () => {
                 if (interval) clearInterval(interval);
             };
         }
-    }, [userId, isRealTime]); const renderTimeSeriesChart = (timeSeriesData, metric = 'totalOrders') => {
+    }, [userId, isRealTime]);
+
+    const renderTimeSeriesChart = (timeSeriesData, metric = 'totalOrders') => {
         if (!timeSeriesData || timeSeriesData.length === 0) return null;
 
         const chartHeight = 250;
@@ -201,7 +207,7 @@ const Analytics = () => {
         );
     }
 
-    const currentPeriodData = data[selectedPeriod] || { totalOrders: 0, totalOrderValue: 0, activeUsers: 0 };
+    const currentPeriodData = data[activeTab] || { totalOrders: 0, totalOrderValue: 0, activeUsers: 0 };
 
     return (
         <div className="analytics-container">
@@ -216,17 +222,17 @@ const Analytics = () => {
                         <h3 className="card-title">Total Orders</h3>
                         <span className="card-icon">📦</span>
                     </div>
-                    <div className="card-value">{currentPeriodData.totalOrders}</div>
-                    <p className="card-label">Orders this {selectedPeriod}</p>
+                    <div className="card-value">{data.totalOrders || 0}</div>
+                    <p className="card-label">Total processed orders</p>
                 </div>
 
                 <div className="analytics-card">
                     <div className="card-header">
-                        <h3 className="card-title">Total Revenue</h3>
+                        <h3 className="card-title">Total Payments</h3>
                         <span className="card-icon">💰</span>
                     </div>
-                    <div className="card-value">₹{currentPeriodData.totalOrderValue}</div>
-                    <p className="card-label">Revenue this {selectedPeriod}</p>
+                    <div className="card-value">₹{(data.totalOrderValue || 0).toLocaleString()}</div>
+                    <p className="card-label">Overall revenue received</p>
                 </div>
 
                 <div className="analytics-card">
@@ -234,8 +240,8 @@ const Analytics = () => {
                         <h3 className="card-title">Active Users</h3>
                         <span className="card-icon">👥</span>
                     </div>
-                    <div className="card-value">{currentPeriodData.activeUsers}</div>
-                    <p className="card-label">Users this {selectedPeriod}</p>
+                    <div className="card-value">{data.activeUsers || 0}</div>
+                    <p className="card-label">Total registerd users</p>
                 </div>
 
                 <div className="analytics-card">
@@ -267,6 +273,37 @@ const Analytics = () => {
                     <p className="card-label">Real-time data</p>
                 </div>
             </div>
+
+            {/* Live Activity Feed */}
+            {data.recentInvoices && data.recentInvoices.length > 0 && (
+                <div className="live-activity-section">
+                    <div className="section-header">
+                        <h2 className="section-title">⚡ Live Activity Feed</h2>
+                        <div className="live-count-badge">
+                            <span className="live-dot"></span>
+                            Latest Transactions
+                        </div>
+                    </div>
+                    <div className="activity-list">
+                        {data.recentInvoices.map((invoice, idx) => (
+                            <div key={invoice._id} className="activity-item" style={{ animationDelay: `${idx * 0.1}s` }}>
+                                <div className="activity-time">
+                                    {new Date(invoice.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                                </div>
+                                <div className="activity-main">
+                                    <span className="activity-user">{invoice.customerName}</span>
+                                    <span className="activity-action">placed a new order</span>
+                                    <span className="activity-ref">{invoice.invoiceNumber}</span>
+                                </div>
+                                <div className="activity-amount">
+                                    +₹{invoice.totalAmount.toLocaleString()}
+                                </div>
+                                <div className="activity-status-dot"></div>
+                            </div>
+                        ))}
+                    </div>
+                </div>
+            )}
 
             {/* Invoice Analytics Section */}
             {invoiceData && (
@@ -405,20 +442,29 @@ const Analytics = () => {
                             Daily
                         </button>
                         <select
-                            value={selectedPeriod}
-                            onChange={(e) => setSelectedPeriod(e.target.value)}
+                            value={graphMetric}
+                            onChange={(e) => setGraphMetric(e.target.value)}
                             className="filter-button"
                             style={{ background: '#f8f9fa', border: '1px solid #e9ecef' }}
                         >
                             <option value="totalOrders">Orders</option>
                             <option value="totalOrderValue">Revenue</option>
-                            <option value="activeUsers">Users</option>
+                        </select>
+                        <select
+                            value={activeTab}
+                            onChange={(e) => setActiveTab(e.target.value)}
+                            className="filter-button"
+                            style={{ background: '#000', color: '#fff' }}
+                        >
+                            <option value="weekly">Weekly View</option>
+                            <option value="monthly">Monthly View</option>
+                            <option value="yearly">Yearly View</option>
                         </select>
                     </div>
                 </div>
                 <div className="chart-content">
                     {data && data[chartType] && data[chartType].length > 0 ? (
-                        renderTimeSeriesChart(data[chartType], selectedPeriod)
+                        renderTimeSeriesChart(data[chartType], graphMetric)
                     ) : (
                         <div className="chart-placeholder">
                             <div className="chart-placeholder-icon">📊</div>
@@ -428,6 +474,38 @@ const Analytics = () => {
                     )}
                 </div>
             </div>
+
+            {/* Top Products Section */}
+            {data.topProducts && data.topProducts.length > 0 && (
+                <div className="top-products-section">
+                    <div className="section-header">
+                        <h2 className="section-title">🏆 Top Performing Products</h2>
+                        <p className="section-subtitle">Products bringing in the most revenue</p>
+                    </div>
+                    <div className="top-products-list">
+                        {data.topProducts.map((product, index) => (
+                            <div key={index} className="top-product-row">
+                                <div className="rank">#{index + 1}</div>
+                                <div className="product-info-main">
+                                    <span className="product-name">{product.name}</span>
+                                    <span className="product-sold">{product.sold} units sold</span>
+                                </div>
+                                <div className="product-revenue">
+                                    <span className="revenue-value">₹{product.revenue?.toLocaleString()}</span>
+                                    <div className="revenue-bar-bg">
+                                        <div
+                                            className="revenue-bar-fill"
+                                            style={{
+                                                width: `${(product.revenue / data.topProducts[0].revenue) * 100}%`
+                                            }}
+                                        ></div>
+                                    </div>
+                                </div>
+                            </div>
+                        ))}
+                    </div>
+                </div>
+            )}
 
             <div className="period-comparison">
                 <div className="comparison-header">

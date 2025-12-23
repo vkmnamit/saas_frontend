@@ -1,11 +1,16 @@
 import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import './PaymentGateway.css';
 
 const PaymentGateway = () => {
-    const [amount, setAmount] = useState(500);
+    const location = useLocation();
+    const cartItems = location.state?.items || [];
+    const cartTotal = location.state?.totalValue || 500;
+
+    const [amount, setAmount] = useState(cartTotal);
     const [loading, setLoading] = useState(false);
     const [paymentStatus, setPaymentStatus] = useState('');
+    const [completedOrder, setCompletedOrder] = useState(null);
     const navigate = useNavigate();
 
     // Load Razorpay script
@@ -30,14 +35,14 @@ const PaymentGateway = () => {
             alert('⚠️ No internet connection detected!\n\nPlease check your connection and try again.');
             console.warn('Internet connection lost');
         };
-        
+
         const handleOnline = () => {
             console.log('✅ Internet connection restored');
         };
-        
+
         window.addEventListener('offline', handleOffline);
         window.addEventListener('online', handleOnline);
-        
+
         return () => {
             window.removeEventListener('offline', handleOffline);
             window.removeEventListener('online', handleOnline);
@@ -136,25 +141,38 @@ const PaymentGateway = () => {
                         console.log('Verification response:', verifyData);
 
                         if (verifyData.success) {
-                            // Step 4: Create Invoice after successful payment
+                            // Step 4: Complete Order - Create Invoice, Update Stock, Log History, Generate Alerts
                             try {
-                                console.log('Creating invoice...');
-                                const invoiceResponse = await fetch('http://localhost:5002/api/invoices/create', {
+                                console.log('Completing order with items:', cartItems);
+                                const userId = location.state?.userId || localStorage.getItem('userId') || '000000000000000000000000';
+
+                                // Prepare items in the format expected by the API
+                                const orderItems = cartItems.map(item => {
+                                    // Handle cases where productId might be populated (object) or just an ID (string)
+                                    const pId = (typeof item.productId === 'object' && item.productId?._id)
+                                        ? item.productId._id
+                                        : (item.productId || item._id);
+
+                                    return {
+                                        productId: pId,
+                                        productName: item.productName,
+                                        quantity: item.quantity || 1,
+                                        price: item.price,
+                                        subtotal: (item.price * (item.quantity || 1))
+                                    };
+                                });
+
+                                const orderResponse = await fetch('http://localhost:5002/api/orders/complete-order', {
                                     method: 'POST',
                                     headers: {
                                         'Content-Type': 'application/json',
                                     },
                                     body: JSON.stringify({
-                                        userId: localStorage.getItem('userId') || '000000000000000000000000',
+                                        userId: userId,
                                         customerName: 'Test Customer', // Replace with actual user data
                                         customerEmail: 'test@example.com',
                                         customerContact: '9876543210',
-                                        items: [{
-                                            productName: 'Product Purchase',
-                                            quantity: 1,
-                                            price: amount,
-                                            subtotal: amount
-                                        }],
+                                        items: orderItems,
                                         subtotal: amount,
                                         tax: 0,
                                         discount: 0,
@@ -170,28 +188,29 @@ const PaymentGateway = () => {
                                     }),
                                 });
 
-                                if (invoiceResponse.ok) {
-                                    const invoiceData = await invoiceResponse.json();
-                                    console.log('✅ Invoice created:', invoiceData);
+                                if (orderResponse.ok) {
+                                    const orderData = await orderResponse.json();
+                                    console.log('✅ Order completed:', orderData);
 
                                     setPaymentStatus('success');
                                     setLoading(false);
-                                    alert(`✅ Payment Successful! 🎉\n\nPayment ID: ${verifyData.paymentId}\nOrder ID: ${verifyData.orderId}\nInvoice Number: ${invoiceData.invoice.invoiceNumber}`);
+                                    setCompletedOrder(orderData); // Store for UI
 
-                                    // Navigate to invoice page
-                                    navigate(`/invoice/${invoiceData.invoice.id}`);
+                                    // Clear cart after successful order
+                                    localStorage.removeItem('guest_cart_v1');
                                 } else {
-                                    console.warn('Failed to create invoice, but payment was successful');
-                                    setPaymentStatus('success');
+                                    const errorData = await orderResponse.json();
+                                    console.warn('Failed to complete order:', errorData);
+                                    setPaymentStatus('warning');
                                     setLoading(false);
-                                    alert(`✅ Payment Successful! 🎉\n\nPayment ID: ${verifyData.paymentId}\nOrder ID: ${verifyData.orderId}\n\n⚠️ Invoice generation pending`);
+                                    alert(`✅ Payment Successful! 🎉\n\nPayment ID: ${verifyData.paymentId}\nOrder ID: ${verifyData.orderId}\n\n⚠️ ${errorData.message || 'Order processing pending'}`);
                                 }
-                            } catch (invoiceError) {
-                                console.error('Invoice creation error:', invoiceError);
-                                // Payment was successful, just invoice creation failed
+                            } catch (orderError) {
+                                console.error('Order completion error:', orderError);
+                                // Payment was successful, just order processing failed
                                 setPaymentStatus('success');
                                 setLoading(false);
-                                alert(`✅ Payment Successful! 🎉\n\nPayment ID: ${verifyData.paymentId}\nOrder ID: ${verifyData.orderId}\n\n⚠️ Invoice will be generated shortly`);
+                                alert(`✅ Payment Successful! 🎉\n\nPayment ID: ${verifyData.paymentId}\nOrder ID: ${verifyData.orderId}\n\n⚠️ Order will be processed shortly`);
                             }
                         } else {
                             setPaymentStatus('failed');
@@ -270,6 +289,58 @@ const PaymentGateway = () => {
             setPaymentStatus('failed');
         }
     };
+
+    if (completedOrder) {
+        return (
+            <div className="payment-gateway-container">
+                <div className="payment-gateway-card success-view">
+                    <div className="success-icon">🎉</div>
+                    <h1>Order Confirmed!</h1>
+                    <p className="subtitle">Thank you for your purchase.</p>
+
+                    <div className="order-summary-box">
+                        <div className="summary-item">
+                            <span>Invoice No:</span>
+                            <strong>{completedOrder.invoice.invoiceNumber}</strong>
+                        </div>
+                        <div className="summary-item">
+                            <span>Total Paid:</span>
+                            <strong>₹{completedOrder.invoice.totalAmount}</strong>
+                        </div>
+                    </div>
+
+                    {completedOrder.alerts && completedOrder.alerts.length > 0 && (
+                        <div className="low-stock-warning">
+                            <h4>⚠️ Inventory Alerts</h4>
+                            {completedOrder.alerts.map((alert, i) => (
+                                <p key={i}>{alert.productName} is running low ({alert.stock} left)</p>
+                            ))}
+                        </div>
+                    )}
+
+                    <div className="action-buttons">
+                        <a
+                            href={`http://localhost:5002/api/invoices/${completedOrder.invoice.id}/pdf`}
+                            className="download-invoice-btn"
+                            target="_blank"
+                            rel="noopener noreferrer"
+                        >
+                            📄 Download Invoice (PDF)
+                        </a>
+                        <button onClick={() => navigate('/orders')} className="view-orders-btn">
+                            📋 View Order History
+                        </button>
+                        <button
+                            className="go-home-btn"
+                            onClick={() => navigate('/')}
+                        >
+                            🏠 Go to Home
+                        </button>
+                    </div>
+                </div>
+            </div>
+        );
+    }
 
     return (
         <div className="payment-gateway-container">

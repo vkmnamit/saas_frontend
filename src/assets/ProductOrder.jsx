@@ -8,7 +8,7 @@ export default function ProductOrder() {
     const [products, setProducts] = useState([]);
     const [loading, setLoading] = useState(true);
     const [userId, setUserId] = useState('');
-    const [fetchAll, setFetchAll] = useState(false);
+    // Removed fetchAll: always require userId for product queries
     const [productQuantities, setProductQuantities] = useState({});
     const [addingIds, setAddingIds] = useState({});
     const [searchQuery, setSearchQuery] = useState('');
@@ -24,15 +24,16 @@ export default function ProductOrder() {
                 });
                 if (!res.ok) {
                     console.error('Failed to fetch user profile:', res.statusText);
-                    alert('Unable to fetch user profile. Please try again later.');
+                    alert('Unable to fetch user profile. Please sign in.');
                     setUserId('');
-                    setFetchAll(true);
                     return;
                 }
                 const data = await res.json();
                 const id = data._id || data.user?._id || '';
                 if (!id) {
-                    setFetchAll(true);
+                    alert('No user ID found. Please sign in.');
+                    setUserId('');
+                    return;
                 }
                 setUserId(id);
             } catch (err) {
@@ -43,63 +44,48 @@ export default function ProductOrder() {
     }, []);
 
     useEffect(() => {
-        // Fetch products once we know whether to fetch per-user or all
-        if (!userId && !fetchAll) return; // wait until we know what to fetch
+        // Fetch products for the signed-in user only
+        if (!userId) return;
 
-        (async () => {
-            setLoading(true);
+        const loadProducts = async () => {
             try {
-                const url = fetchAll
-                    ? '/api/products'
-                    : `/api/products?userId=${userId}`;
+                const url = `/api/products?userId=${userId}`;
                 const res = await fetch(url);
-                if (!res.ok) {
-                    if (res.status === 404) {
-                        alert('Product not found. It might have been removed or updated.');
-                    } else {
-                        alert(`Failed to fetch products: ${res.statusText}`);
-                    }
-                    setProducts([]);
-                    setLoading(false);
-                    return;
-                }
-                const data = await res.json();
-                // support responses that wrap products in an object { products: [...] }
-                const productsArr = Array.isArray(data) ? data : data.products || [];
-                console.log('Fetched products:', productsArr);
-                console.log('Product imageUrls:', productsArr.map(p => ({ name: p.productName, imageUrl: p.imageUrl })));
-                setProducts(productsArr);
-                setFilteredProducts(productsArr);
-                // initialize per-product quantities to 1
-                try {
-                    const init = productsArr.reduce((acc, p) => ({ ...acc, [p._id]: 1 }), {});
-                    setProductQuantities(init);
-                } catch (e) {
-                    console.error('Error initializing product quantities', e);
-                    setProductQuantities({});
+                if (res.ok) {
+                    const data = await res.json();
+                    const productsArr = Array.isArray(data) ? data : data.products || [];
+                    setProducts(productsArr);
+                    setFilteredProducts(productsArr);
+
+                    // Only initialize quantities if not already set to avoid resetting user input
+                    setProductQuantities(prev => {
+                        const next = { ...prev };
+                        productsArr.forEach(p => {
+                            if (!next[p._id]) next[p._id] = 1;
+                        });
+                        return next;
+                    });
                 }
             } catch (err) {
-                console.error('Server error fetching products', err);
-                alert('Server error fetching products. Please try again later.');
-                setProducts([]);
+                console.error('Failed to fetch products', err);
             } finally {
                 setLoading(false);
             }
-        })();
-    }, [userId, fetchAll]);
+        };
 
-    // Filter products based on search query
+        loadProducts();
+        const interval = setInterval(loadProducts, 10000);
+        return () => clearInterval(interval);
+    }, [userId]);
+
+    // Filter products by search query
     useEffect(() => {
-        if (!searchQuery.trim()) {
-            setFilteredProducts(products);
-        } else {
-            const filtered = products.filter(product =>
-                product.productName.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                product.description?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                product.category?.toLowerCase().includes(searchQuery.toLowerCase())
-            );
-            setFilteredProducts(filtered);
-        }
+        const filtered = products.filter(product =>
+            product.productName.toLowerCase().includes(searchQuery.toLowerCase()) ||
+            product.description?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+            product.category?.toLowerCase().includes(searchQuery.toLowerCase())
+        );
+        setFilteredProducts(filtered);
     }, [searchQuery, products]);
 
     // add-to-cart handler: use selected quantity, server for signed-in users, localStorage for guests
@@ -254,12 +240,7 @@ export default function ProductOrder() {
                     <h1 className="product-order-title">Product Catalog</h1>
                     <p className="product-order-subtitle">Browse and add products to your cart</p>
                 </div>
-                <button
-                    className="toggle-button"
-                    onClick={() => setFetchAll(!fetchAll)}
-                >
-                    {fetchAll ? 'MY PRODUCTS' : 'ALL PRODUCTS'}
-                </button>
+                {/* Toggle button removed: always show only signed-in user's products */}
             </div>
 
             <div className="controls-bar">
@@ -285,9 +266,7 @@ export default function ProductOrder() {
                     <p className="no-products-message">
                         {searchQuery
                             ? `No products match "${searchQuery}". Try a different search.`
-                            : fetchAll
-                                ? 'No products are available in the catalog.'
-                                : 'You haven\'t added any products yet.'}
+                            : 'You haven\'t added any products yet.'}
                     </p>
                     {!searchQuery && (
                         <Link to="/products" className="shop-now-button">

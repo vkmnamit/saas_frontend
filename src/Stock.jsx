@@ -10,18 +10,22 @@ export default function Stock() {
     const [lowStockThreshold, setLowStockThreshold] = useState(10);
     const [sortBy, setSortBy] = useState('stock');
     const [filterBy, setFilterBy] = useState('all');
+    const [userId, setUserId] = useState(null);
 
-    const fetchStockData = async () => {
+    const fetchStockData = async (uid) => {
         try {
-            const res = await fetch('http://localhost:5002/api/products', {
+            const currentUserId = uid || userId;
+            if (!currentUserId) return;
+
+            const res = await fetch(`http://localhost:5002/api/products?userId=${currentUserId}`, {
                 method: 'GET',
                 headers: { 'Content-Type': 'application/json' },
                 credentials: 'include',
             });
-            
+
             if (res.ok) {
                 const data = await res.json();
-                setProducts(data);
+                setProducts(Array.isArray(data) ? data : (data.products || []));
             } else {
                 setError('Failed to fetch stock data');
             }
@@ -33,18 +37,42 @@ export default function Stock() {
     };
 
     useEffect(() => {
-        fetchStockData();
-        
+        const initialize = async () => {
+            try {
+                const res = await fetch('http://localhost:5002/api/users/profile', {
+                    method: 'GET',
+                    credentials: 'include',
+                });
+                if (res.ok) {
+                    const data = await res.json();
+                    const id = data._id || data.user?._id;
+                    setUserId(id);
+                    fetchStockData(id);
+                } else {
+                    setError('Please sign in to view stock');
+                    setLoading(false);
+                }
+            } catch (err) {
+                setError('Authentication error');
+                setLoading(false);
+            }
+        };
+        initialize();
+    }, []);
+
+    useEffect(() => {
+        if (!userId) return;
+
         // Set up real-time updates every 15 seconds
         let interval;
         if (isRealTime) {
-            interval = setInterval(fetchStockData, 15000);
+            interval = setInterval(() => fetchStockData(userId), 15000);
         }
-        
+
         return () => {
             if (interval) clearInterval(interval);
         };
-    }, [isRealTime]);
+    }, [isRealTime, userId]);
 
     const getStockStatus = (stock) => {
         if (stock === 0) return { status: 'out', color: '#dc3545', label: 'Out of Stock' };
@@ -227,9 +255,9 @@ export default function Stock() {
                                         <div className="stock-level">
                                             <span className="stock-number">{product.stock}</span>
                                             <div className="stock-bar">
-                                                <div 
-                                                    className="stock-fill" 
-                                                    style={{ 
+                                                <div
+                                                    className="stock-fill"
+                                                    style={{
                                                         width: `${Math.min(100, (product.stock / Math.max(lowStockThreshold * 2, 20)) * 100)}%`,
                                                         backgroundColor: stockStatus.color
                                                     }}
@@ -238,8 +266,8 @@ export default function Stock() {
                                         </div>
                                     </td>
                                     <td>
-                                        <span 
-                                            className="status-badge" 
+                                        <span
+                                            className="status-badge"
                                             style={{ backgroundColor: stockStatus.color }}
                                         >
                                             {stockStatus.label}

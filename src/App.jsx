@@ -17,6 +17,7 @@ import Stock from "./Stock.jsx";
 import Setup from "./Setup.jsx";
 import Settings from './assets/Settings';
 import BulkProductUpload from './assets/BulkUpload';
+import OrderHistory from './assets/OrderHistory';
 
 import { BrowserRouter as Router, Route, Routes } from 'react-router-dom'
 
@@ -43,6 +44,7 @@ function App() {
                 <Route path="/stock" element={<Stock />} />
                 <Route path="/setup" element={<Setup />} />
                 <Route path="/settings" element={<Settings />} />
+                <Route path="/orders" element={<OrderHistory />} />
             </Routes>
         </Router>
     );

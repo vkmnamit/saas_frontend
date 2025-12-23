@@ -12,8 +12,37 @@ function Dashboard() {
     const [products, setProducts] = useState([]);
     const [loadingProducts, setLoadingProducts] = useState(true);
     const navigate = useNavigate();
+    const [recentOrders, setRecentOrders] = useState([]);
+
     useEffect(() => {
-       
+        const fetchStats = async (uid) => {
+            try {
+                const url = uid
+                    ? `http://localhost:5002/api/analytics?userId=${uid}`
+                    : 'http://localhost:5002/api/analytics';
+                const res = await fetch(url, { credentials: 'include' });
+                if (res.ok) {
+                    const stats = await res.json();
+                    setStats(stats);
+                }
+            } catch (err) {
+                console.error('Error fetching dashboard stats:', err);
+            }
+        };
+
+        const fetchRecentOrders = async (uid) => {
+            if (!uid) return;
+            try {
+                const res = await fetch(`http://localhost:5002/api/orders/order-history/${uid}?limit=5`, { credentials: 'include' });
+                if (res.ok) {
+                    const orderData = await res.json();
+                    setRecentOrders(orderData.invoices || []);
+                }
+            } catch (err) {
+                console.error('Error fetching recent orders:', err);
+            }
+        };
+
         (async () => {
             try {
                 const res = await fetch('http://localhost:5002/api/users/profile', {
@@ -23,48 +52,61 @@ function Dashboard() {
                 });
 
                 if (res.status === 401) {
-                    // Not authenticated — redirect to signin
                     alert('You are not authenticated. Redirecting to sign-in.');
                     navigate('/signin');
                     return;
                 }
 
-                const contentType = res.headers.get('content-type');
-                if (contentType && contentType.includes('application/json')) {
+                if (res.ok) {
                     const result = await res.json();
-                    if (res.ok) {
-                        setData(result.user || result);
-                        setUserRole(result.user?.role || ''); // Set user role
-                    } else {
-                        console.error(result.message || 'Failed to fetch user data');
-                        alert(result.message || 'Failed to fetch user data. Please try again later.');
+                    const profileData = result.user || result;
+                    setData(profileData);
+                    setUserRole(profileData.role || '');
+
+                    if (profileData._id) {
+                        fetchStats(profileData._id);
+                        fetchRecentOrders(profileData._id);
                     }
-                } else {
-                    console.error('Unexpected response format. Expected JSON.');
-                    alert('Unexpected response from the server. Please try again later.');
                 }
             } catch (err) {
-                console.error('Server error. Please try again later.', err);
-                alert('Server error. Please try again later.');
+                console.error('Server error:', err);
             }
         })();
 
-        // Fetch products for top sellers
-        (async () => {
+        const loadProducts = async () => {
             try {
                 setLoadingProducts(true);
                 const res = await fetch('/api/products');
                 if (res.ok) {
                     const productsData = await res.json();
-                    setProducts(productsData.slice(0, 6)); // Show top 6 products
+                    setProducts(productsData.slice(0, 6));
                 }
             } catch (err) {
                 console.error('Error fetching products:', err);
             } finally {
                 setLoadingProducts(false);
             }
-        })();
-    }, [navigate]);
+        };
+
+        loadProducts();
+
+        const interval = setInterval(() => {
+            if (data?._id) {
+                fetchStats(data._id);
+                fetchRecentOrders(data._id);
+            }
+            loadProducts();
+        }, 30000);
+
+        return () => clearInterval(interval);
+    }, [navigate, data?._id]);
+
+    const [stats, setStats] = useState({
+        totalOrders: 0,
+        totalOrderValue: 0,
+        totalProducts: 0,
+        totalCartItems: 0
+    });
 
     // Render different dashboards based on user role
     const renderDashboardContent = () => {
@@ -180,6 +222,42 @@ function Dashboard() {
                     <p>Here's what's happening with your store today</p>
                 </div>
 
+                {/* Dashboard Stats Cards */}
+                <div className="dashboard-stats-grid">
+                    <div className="dashboard-stat-card">
+                        <div className="stat-icon-wrapper sales">💰</div>
+                        <div className="stat-details">
+                            <h3>Total Revenue</h3>
+                            <p className="stat-number">₹{stats.totalOrderValue.toLocaleString()}</p>
+                            <span className="stat-trend positive">↑ Live</span>
+                        </div>
+                    </div>
+                    <div className="dashboard-stat-card">
+                        <div className="stat-icon-wrapper orders">📦</div>
+                        <div className="stat-details">
+                            <h3>Total Orders</h3>
+                            <p className="stat-number">{stats.totalOrders}</p>
+                            <span className="stat-trend positive">↑ Live</span>
+                        </div>
+                    </div>
+                    <div className="dashboard-stat-card">
+                        <div className="stat-icon-wrapper products">🛍️</div>
+                        <div className="stat-details">
+                            <h3>Active Products</h3>
+                            <p className="stat-number">{stats.totalProducts}</p>
+                            <span className="stat-trend">Catalog</span>
+                        </div>
+                    </div>
+                    <div className="dashboard-stat-card">
+                        <div className="stat-icon-wrapper carts">🛒</div>
+                        <div className="stat-details">
+                            <h3>Products in Cart</h3>
+                            <p className="stat-number">{stats.totalCartItems}</p>
+                            <span className="stat-trend pending">Pending</span>
+                        </div>
+                    </div>
+                </div>
+
                 {/* Top Sellers Section */}
                 <div className="top-sellers-section">
                     <div className="section-header">
@@ -202,9 +280,6 @@ function Dashboard() {
                                     </div>
                                     <div className="product-info">
                                         <h3 className="product-name">{product.productName}</h3>
-                                        <p className="product-description">
-                                            {product.description?.substring(0, 60)}...
-                                        </p>
                                         <div className="product-footer">
                                             <span className="product-price">₹{product.price.toLocaleString()}</span>
                                             <Link to="/product-order" className="product-btn">View</Link>
@@ -214,6 +289,43 @@ function Dashboard() {
                             ))}
                         </div>
                     )}
+                </div>
+
+                {/* Recent Orders Section */}
+                <div className="recent-orders-section">
+                    <div className="section-header">
+                        <h2>Recent Order History</h2>
+                        <Link to="/orders" className="view-all">View All Orders →</Link>
+                    </div>
+
+                    <div className="orders-table-wrapper">
+                        {recentOrders.length > 0 ? (
+                            <table className="orders-table">
+                                <thead>
+                                    <tr>
+                                        <th>Date</th>
+                                        <th>Order ID</th>
+                                        <th>Customer</th>
+                                        <th>Amount</th>
+                                        <th>Status</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {recentOrders.map((order) => (
+                                        <tr key={order._id} onClick={() => navigate(`/invoice/${order._id}`)}>
+                                            <td>{new Date(order.createdAt).toLocaleDateString()}</td>
+                                            <td className="order-id-cell">{order.invoiceNumber}</td>
+                                            <td>{order.customerName}</td>
+                                            <td className="amount-cell">₹{order.totalAmount.toLocaleString()}</td>
+                                            <td><span className={`status-badge ${order.status}`}>{order.status}</span></td>
+                                        </tr>
+                                    ))}
+                                </tbody>
+                            </table>
+                        ) : (
+                            <div className="no-orders-msg">No recent orders found.</div>
+                        )}
+                    </div>
                 </div>
             </div>
         </div>
